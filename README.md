@@ -7,3 +7,8 @@ Since I am learning as I go, solutions are definitely not meant to be optimal bu
 # Interested in working together?
 
 I love ML research and algorithmic engineering alike. If you are interested in working with me, please reach out (here, LinkedIn, email, etc).
+
+# todo
+
+- back to prefix sums: implement without extra allocation using Blelloch scan
+- back to matmul: implement using tiles
