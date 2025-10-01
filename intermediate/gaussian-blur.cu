@@ -1,10 +1,15 @@
 #include <cuda_runtime.h>
 
+// important here is the order in which we iterate across the input and the kernel
+// column first, then row (i.e. y first, then x)
+// this ensures that within a warp we read consecutive memory locations
+// since the indices are calculates as x * #cols + y
+// this makes immense difference
+
 __global__ void gaussian_blur_kernel(const float *input, const float *kernel, float *output,
 int input_rows, int input_cols, int kernel_rows, int kernel_cols) {
-
-    const int x = threadIdx.x + blockIdx.x * blockDim.x;
-    const int y = threadIdx.y + blockIdx.y * blockDim.y;
+    const int y = threadIdx.x + blockIdx.x * blockDim.x;
+    const int x = threadIdx.y + blockIdx.y * blockDim.y;
 
     if (x >= input_rows || y >= input_cols) return;
 
@@ -13,8 +18,8 @@ int input_rows, int input_cols, int kernel_rows, int kernel_cols) {
 
     float smooth = 0;
 
-    for (int i = 0; i < kernel_rows; i++) {
-        for (int j = 0 ; j < kernel_cols ; j++) {
+    for (int j = 0; j < kernel_cols; j++) {
+        for (int i = 0 ; i < kernel_rows ; i++) {
             int this_x = offset_x + i;
             int this_y = offset_y + j;
 
@@ -32,8 +37,8 @@ extern "C" void solve(const float* input, const float* kernel, float* output,
            int input_rows, int input_cols, int kernel_rows, int kernel_cols) {
     const dim3 numThreads(32,32);
     const dim3 numBlocks(
-        (input_rows + numThreads.x - 1) / numThreads.x,
-        (input_cols + numThreads.y - 1) / numThreads.y
+        (input_cols + numThreads.y - 1) / numThreads.y,
+        (input_rows + numThreads.x - 1) / numThreads.x
     );
     gaussian_blur_kernel<<<numBlocks, numThreads>>>(
         input, kernel, output, input_rows, input_cols, kernel_rows, kernel_cols
